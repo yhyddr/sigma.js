@@ -72,10 +72,6 @@
        * These indexes refer from node to nodes. Each key is an id, and each
        * value is the array of the ids of related nodes.
        */
-      inNeighborsIndex: Object.create(null),
-      outNeighborsIndex: Object.create(null),
-      allNeighborsIndex: Object.create(null),
-
       inNeighborsCount: Object.create(null),
       outNeighborsCount: Object.create(null),
       allNeighborsCount: Object.create(null)
@@ -136,7 +132,7 @@
    * @param  {object} obj The object to empty.
    * @return {object}     The empty object.
    */
-  function __emptyObject(obj) {
+  sigma.utils.emptyObject = function(obj) {
     var k;
 
     for (k in obj)
@@ -144,7 +140,7 @@
         delete obj[k];
 
     return obj;
-  }
+  };
 
 
 
@@ -346,10 +342,12 @@
 
     // Attach the bindings:
     for (k in bindings)
-      if (typeof bindings[k] !== 'function')
-        throw 'The bindings must be functions.';
-      else
+      if (typeof bindings[k] === 'object')
+        graph.attach(k, name, bindings[k].fn, bindings[k].before);
+      else if (typeof bindings[k] === 'function')
         graph.attach(k, name, bindings[k]);
+      else
+        throw 'The bindings must be functions.';
 
     return this;
   };
@@ -401,11 +399,7 @@
     else
       validNode.id = id;
 
-    // Add empty containers for edges indexes:
-    this.inNeighborsIndex[id] = Object.create(null);
-    this.outNeighborsIndex[id] = Object.create(null);
-    this.allNeighborsIndex[id] = Object.create(null);
-
+    // Reinitialize counts:
     this.inNeighborsCount[id] = 0;
     this.outNeighborsCount[id] = 0;
     this.allNeighborsCount[id] = 0;
@@ -488,32 +482,6 @@
     this.edgesArray.push(validEdge);
     this.edgesIndex[validEdge.id] = validEdge;
 
-    if (!this.inNeighborsIndex[validEdge.target][validEdge.source])
-      this.inNeighborsIndex[validEdge.target][validEdge.source] =
-        Object.create(null);
-    this.inNeighborsIndex[validEdge.target][validEdge.source][validEdge.id] =
-      validEdge;
-
-    if (!this.outNeighborsIndex[validEdge.source][validEdge.target])
-      this.outNeighborsIndex[validEdge.source][validEdge.target] =
-        Object.create(null);
-    this.outNeighborsIndex[validEdge.source][validEdge.target][validEdge.id] =
-      validEdge;
-
-    if (!this.allNeighborsIndex[validEdge.source][validEdge.target])
-      this.allNeighborsIndex[validEdge.source][validEdge.target] =
-        Object.create(null);
-    this.allNeighborsIndex[validEdge.source][validEdge.target][validEdge.id] =
-      validEdge;
-
-    if (validEdge.target !== validEdge.source) {
-      if (!this.allNeighborsIndex[validEdge.target][validEdge.source])
-        this.allNeighborsIndex[validEdge.target][validEdge.source] =
-          Object.create(null);
-      this.allNeighborsIndex[validEdge.target][validEdge.source][validEdge.id] =
-        validEdge;
-    }
-
     // Keep counts up to date:
     this.inNeighborsCount[validEdge.target]++;
     this.outNeighborsCount[validEdge.source]++;
@@ -556,19 +524,9 @@
         this.dropEdge(this.edgesArray[i].id);
 
     // Remove related edge indexes:
-    delete this.inNeighborsIndex[id];
-    delete this.outNeighborsIndex[id];
-    delete this.allNeighborsIndex[id];
-
     delete this.inNeighborsCount[id];
     delete this.outNeighborsCount[id];
     delete this.allNeighborsCount[id];
-
-    for (k in this.nodesIndex) {
-      delete this.inNeighborsIndex[k][id];
-      delete this.outNeighborsIndex[k][id];
-      delete this.allNeighborsIndex[k][id];
-    }
 
     return this;
   });
@@ -600,24 +558,6 @@
         break;
       }
 
-    delete this.inNeighborsIndex[edge.target][edge.source][edge.id];
-    if (!Object.keys(this.inNeighborsIndex[edge.target][edge.source]).length)
-      delete this.inNeighborsIndex[edge.target][edge.source];
-
-    delete this.outNeighborsIndex[edge.source][edge.target][edge.id];
-    if (!Object.keys(this.outNeighborsIndex[edge.source][edge.target]).length)
-      delete this.outNeighborsIndex[edge.source][edge.target];
-
-    delete this.allNeighborsIndex[edge.source][edge.target][edge.id];
-    if (!Object.keys(this.allNeighborsIndex[edge.source][edge.target]).length)
-      delete this.allNeighborsIndex[edge.source][edge.target];
-
-    if (edge.target !== edge.source) {
-      delete this.allNeighborsIndex[edge.target][edge.source][edge.id];
-      if (!Object.keys(this.allNeighborsIndex[edge.target][edge.source]).length)
-        delete this.allNeighborsIndex[edge.target][edge.source];
-    }
-
     this.inNeighborsCount[edge.target]--;
     this.outNeighborsCount[edge.source]--;
     this.allNeighborsCount[edge.source]--;
@@ -640,9 +580,6 @@
     // Delete indexes:
     delete this.nodesIndex;
     delete this.edgesIndex;
-    delete this.inNeighborsIndex;
-    delete this.outNeighborsIndex;
-    delete this.allNeighborsIndex;
     delete this.inNeighborsCount;
     delete this.outNeighborsCount;
     delete this.allNeighborsCount;
@@ -661,15 +598,12 @@
     // Due to GC issues, I prefer not to create new object. These objects are
     // only available from the methods and attached functions, but still, it is
     // better to prevent ghost references to unrelevant data...
-    __emptyObject(this.nodesIndex);
-    __emptyObject(this.edgesIndex);
-    __emptyObject(this.nodesIndex);
-    __emptyObject(this.inNeighborsIndex);
-    __emptyObject(this.outNeighborsIndex);
-    __emptyObject(this.allNeighborsIndex);
-    __emptyObject(this.inNeighborsCount);
-    __emptyObject(this.outNeighborsCount);
-    __emptyObject(this.allNeighborsCount);
+    sigma.utils.emptyObject(this.nodesIndex);
+    sigma.utils.emptyObject(this.edgesIndex);
+    sigma.utils.emptyObject(this.nodesIndex);
+    sigma.utils.emptyObject(this.inNeighborsCount);
+    sigma.utils.emptyObject(this.outNeighborsCount);
+    sigma.utils.emptyObject(this.allNeighborsCount);
 
     return this;
   });
