@@ -402,11 +402,15 @@
    * @return {sigma.renderers.canvas} Returns the instance itself.
    */
   sigma.renderers.canvas.prototype.clear = function() {
-    var k;
+    var done = [],
+        k;
 
-    for (k in this.domElements)
-      if (this.domElements[k].tagName === 'CANVAS')
-        this.domElements[k].width = this.domElements[k].width;
+    for (k in this.contexts) {
+      if (!~done.indexOf(this.contexts[k])) {
+        this.contexts[k].clearRect(0, 0, this.width, this.height);
+        done.push(this.contexts[k]);
+      }
+    }
 
     return this;
   };
