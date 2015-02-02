@@ -52,7 +52,8 @@
 
     function draw() {
       // Clear self.contexts.hover:
-      self.contexts.hover.canvas.width = self.contexts.hover.canvas.width;
+      var c = self.contexts.hover.canvas;
+      self.contexts.hover.clearRect(0, 0, c.width, c.height);
 
       var k,
           source,
