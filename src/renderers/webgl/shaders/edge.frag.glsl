@@ -10,13 +10,13 @@ void main(void) {
 
   float radius = v_thickness;
 
-  float dist = length(v_normal) * (radius + feather);
+  float dist = length(v_normal) * radius + feather;
 
   float t = smoothstep(
-    radius + feather,
     radius - feather,
+    radius,
     dist
   );
 
-  gl_FragColor = mix(color0, v_color, t);
+  gl_FragColor = mix(v_color, color0, t);
 }
