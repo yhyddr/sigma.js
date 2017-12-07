@@ -20,6 +20,8 @@
 
 // TODO: filtering unwanted labels beforehand through the filter function
 
+// TODO: frustum seems to return too much nodes
+
 // NOTE: this is basically a MX-CIF Quadtree at this point
 // NOTE: need to explore R-Trees for edges
 // NOTE: need to explore 2d segment tree for edges

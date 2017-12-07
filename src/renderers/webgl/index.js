@@ -8,6 +8,7 @@ import Renderer from '../../renderer';
 import Camera from '../../camera';
 import MouseCaptor from '../../captors/mouse';
 import QuadTree from '../../quadtree';
+import {getLabelsToDisplay} from '../../heuristics/labels';
 import NodeProgram from './programs/node.fast';
 import EdgeProgram from './programs/edge';
 
@@ -85,6 +86,7 @@ export default class WebGLRenderer extends Renderer {
 
     // State
     this.highlightedNodes = new Set();
+    this.displayedLabels = new Set();
     this.hoveredNode = null;
     this.wasRenderedInThisFrame = false;
     this.renderFrame = null;
@@ -126,6 +128,7 @@ export default class WebGLRenderer extends Renderer {
       width: this.width,
       height: this.height
     });
+    this.lastCameraState = this.camera.getState();
 
     // Binding camera events
     this.bindCameraHandlers();
@@ -744,14 +747,24 @@ export default class WebGLRenderer extends Renderer {
       );
     }
 
+    const worthyLabels = getLabelsToDisplay(
+      this.camera,
+      this.lastCameraState,
+      this.nodeDataCache,
+      visibleNodes,
+      this.displayedLabels
+    );
+
+    this.displayedLabels = new Set(worthyLabels);
+
     // Drawing labels
     // TODO: POW RATIO is currently default 0.5 and harcoded
     const context = this.contexts.labels;
 
     const sizeRatio = Math.pow(cameraState.ratio, 0.5);
 
-    for (let i = 0, l = visibleNodes.length; i < l; i++) {
-      const data = this.nodeDataCache[visibleNodes[i]];
+    for (let i = 0, l = worthyLabels.length; i < l; i++) {
+      const data = this.nodeDataCache[worthyLabels[i]];
 
       const {x, y} = this.camera.graphToDisplay(data.x, data.y);
 
@@ -759,8 +772,8 @@ export default class WebGLRenderer extends Renderer {
       const size = data.size / sizeRatio;
 
       // TODO: this is the label threshold hardcoded
-      if (size < 8)
-        continue;
+      // if (size < 8)
+      //   continue;
 
       drawLabel(context, {
         label: data.label,
@@ -772,6 +785,9 @@ export default class WebGLRenderer extends Renderer {
 
     // Rendering highlighted nodes
     this.renderHighlightedNodes();
+
+    // Storing last camera state
+    this.lastCameraState = cameraState;
 
     return this;
   }
