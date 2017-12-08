@@ -86,6 +86,7 @@ export default class WebGLRenderer extends Renderer {
 
     // State
     this.highlightedNodes = new Set();
+    this.visibleNodes = new Set();
     this.displayedLabels = new Set();
     this.hoveredNode = null;
     this.wasRenderedInThisFrame = false;
@@ -751,11 +752,14 @@ export default class WebGLRenderer extends Renderer {
       this.camera,
       this.lastCameraState,
       this.nodeDataCache,
+      this.nodeOrder,
       visibleNodes,
+      this.visibleNodes,
       this.displayedLabels
     );
 
     this.displayedLabels = new Set(worthyLabels);
+    this.visibleNodes = new Set(visibleNodes);
 
     // Drawing labels
     // TODO: POW RATIO is currently default 0.5 and harcoded
