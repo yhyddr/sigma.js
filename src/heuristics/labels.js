@@ -11,8 +11,14 @@ const DEFAULT_CELL = {
   height: 150
 };
 
+const DEFAULT_UNZOOMED_CELL = {
+  width: 400,
+  height: 300
+};
+
 const DEFAULT_CELL_POOL = 1;
 
+// TODO: possible to use threshold (should be applied by quadtree for perf)
 exports.getLabelsToDisplay = function(
   camera,
   lastCameraState,
@@ -42,21 +48,23 @@ exports.getLabelsToDisplay = function(
         unzooming = cameraState.ratio > lastCameraState.ratio,
         unzoomedPanning = !zooming && !unzooming && cameraState.ratio >= 1;
 
+  const baseCell = cameraState.ratio >= 1.3 ? DEFAULT_UNZOOMED_CELL : DEFAULT_CELL;
+
   // If we are panning while unzoomed, we shouldn't change label selection
   if (unzoomedPanning && displayedLabels.size !== 0)
     return Array.from(displayedLabels);
 
   // Adapting the cellWidth
-  let cellWidthRemainder = dimensions.width % DEFAULT_CELL.width,
+  let cellWidthRemainder = dimensions.width % baseCell.width,
       cellWidth = (
-        DEFAULT_CELL.width +
-        (cellWidthRemainder / Math.floor(dimensions.width / DEFAULT_CELL.width))
+        baseCell.width +
+        (cellWidthRemainder / Math.floor(dimensions.width / baseCell.width))
       );
 
-  let cellHeightRemainder = dimensions.height % DEFAULT_CELL.height,
+  let cellHeightRemainder = dimensions.height % baseCell.height,
       cellHeight = (
-        DEFAULT_CELL.height +
-        (cellWidthRemainder / Math.floor(dimensions.height / DEFAULT_CELL.height))
+        baseCell.height +
+        (cellWidthRemainder / Math.floor(dimensions.height / baseCell.height))
       );
 
   // Building the grid
@@ -69,15 +77,14 @@ exports.getLabelsToDisplay = function(
     const node = visibleNodes[i],
           data = cache[node];
 
+    if (panning && !zooming && !unzooming) {
+      if (!displayedLabels.has(node) && lastVisibleNodes.has(node))
+        continue;
+    }
+
     let pos = camera.graphToDisplay(data.x, data.y);
 
     const centeredPos = centeredCamera.graphToDisplay(data.x, data.y);
-
-    if (panning && !unzooming && !zooming)
-      pos = centeredPos;
-
-    if (data.label === 'Region Polaire')
-      console.log(pos, centeredPos);
 
     // Filtering out-of-view nodes (quadtree quirk)
     // TODO: this should probably be done by quadtree beforehand?
@@ -88,10 +95,9 @@ exports.getLabelsToDisplay = function(
     //   continue;
 
     // TODO: filter negative buckets and further than required
-    const x = Math.floor(pos.x / cellWidth) % ((panning && !unzooming && !zooming) ? 1 : cellWidth),
-          y = Math.floor(pos.y / cellHeight) % ((panning && !unzooming && !zooming) ? 1 : cellHeight);
-if (data.label === 'Region Polaire')
-      console.log(x, y);
+    const x = Math.floor(pos.x / cellWidth) % cellWidth,
+          y = Math.floor(pos.y / cellHeight) % cellHeight;
+
     const key = x + ';' + y;
 
     let bucket = grid[key];
@@ -101,10 +107,6 @@ if (data.label === 'Region Polaire')
         continue;
 
       const championData = cache[bucket[0]];
-
-      if (championData.label === 'Region Polaire' || data.label === 'Region Polaire') {
-        console.log(championData.label, championData.size, data.label, data.size);
-      }
 
       if (data.size > championData.size) {
         bucket[0] = node;
