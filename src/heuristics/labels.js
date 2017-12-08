@@ -48,6 +48,10 @@ exports.getLabelsToDisplay = function(
         unzooming = cameraState.ratio > lastCameraState.ratio,
         unzoomedPanning = !zooming && !unzooming && cameraState.ratio >= 1;
 
+  // Trick to discretize unzooming
+  if (unzooming && Math.trunc(cameraState.ratio * 10) % 3 !== 0)
+    return Array.from(displayedLabels);
+
   const baseCell = cameraState.ratio >= 1.3 ? DEFAULT_UNZOOMED_CELL : DEFAULT_CELL;
 
   // If we are panning while unzoomed, we shouldn't change label selection
