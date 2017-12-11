@@ -99,8 +99,8 @@ exports.getLabelsToDisplay = function(
     //   continue;
 
     // TODO: filter negative buckets and further than required
-    const x = Math.floor(pos.x / cellWidth) % cellWidth,
-          y = Math.floor(pos.y / cellHeight) % cellHeight;
+    const x = Math.floor(pos.x / cellWidth),
+          y = Math.floor(pos.y / cellHeight);
 
     const key = x + ';' + y;
 
@@ -116,7 +116,7 @@ exports.getLabelsToDisplay = function(
         bucket[0] = node;
       }
 
-      if (data.size === championData.size) {
+      else if (data.size === championData.size) {
         const challengerOrder = nodeOrder[node],
               championOrder = nodeOrder[bucket[0]];
 
