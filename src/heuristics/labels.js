@@ -19,6 +19,7 @@ const DEFAULT_UNZOOMED_CELL = {
 const DEFAULT_CELL_POOL = 1;
 
 // TODO: possible to use threshold (should be applied by quadtree for perf)
+// TODO: it's possible to use node keys rather than order to get stable selection
 exports.getLabelsToDisplay = function(
   camera,
   lastCameraState,
